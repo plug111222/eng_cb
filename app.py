@@ -2,13 +2,11 @@ import os
 from flask import Flask, request, jsonify, render_template_string
 from openai import OpenAI
 
-# Initialize Flask app
+# --- Flask app setup ---
 app = Flask(__name__)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # Read from Render's environment variables
 
-# Get the API key securely from environment variables
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# --- Predefined knowledge base for the chatbot ---
+# --- Knowledge base ---
 knowledge = [
     "Campus 'Match High School' has an average engagement score of approximately 3.66.",
     "Campus 'Match Middle School' has an average engagement score of approximately 3.81.",
@@ -36,26 +34,26 @@ knowledge = [
     "68.4% of staff are categorized as 'Not Engaged'."
 ]
 
-# --- Homepage with simple input form ---
+# --- Homepage UI ---
 @app.route("/")
 def index():
     return render_template_string('''
     <!doctype html>
     <html>
         <head>
-            <title>Staff Engagement Chatbot</title>
+            <title>Engagement Chatbot</title>
             <style>
-                body { font-family: Arial; padding: 30px; }
-                input, button { font-size: 16px; padding: 10px; }
-                input { width: 80%; }
+                body { font-family: Arial; margin: 40px; }
+                input[type=text] { width: 80%; padding: 10px; }
+                button { padding: 10px 20px; }
                 #response { margin-top: 20px; font-weight: bold; }
             </style>
         </head>
         <body>
             <h2>📊 Staff Engagement Chatbot</h2>
-            <p>Ask a question about school engagement trends:</p>
+            <p>Ask a question about engagement trends:</p>
             <form id="chat-form">
-                <input type="text" id="question" placeholder="Type your question...">
+                <input type="text" id="question" placeholder="Type your question here...">
                 <button type="submit">Ask</button>
             </form>
             <div id="response"></div>
@@ -76,31 +74,27 @@ def index():
     </html>
     ''')
 
-# --- Chatbot logic endpoint ---
+# --- API route ---
 @app.route("/ask", methods=["POST"])
 def ask():
-    user_question = request.json.get("question", "")
+    user_question = request.json.get("question")
     prompt = (
-        "You are a school data summary chatbot. Respond only using general trends. "
-        "Do not reference individual-level data.\n\n"
-        "Knowledge base:\n" +
+        "You are a data summary chatbot for a school engagement dashboard. "
+        "Use only generalized summaries from staff-wide results. Never reveal individual data.\n\n"
+        "Here is your reference knowledge:\n" +
         "\n".join(knowledge) +
-        f"\n\nUser: {user_question}\nChatbot:"
+        f"\n\nNow respond to the following question:\nUser: {user_question}\nChatbot:"
     )
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.5,
-            max_tokens=200
-        )
-        answer = response.choices[0].message.content.strip()
-    except Exception as e:
-        answer = f"An error occurred: {str(e)}"
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.5,
+        max_tokens=200
+    )
+    return jsonify({"answer": response.choices[0].message.content.strip()})
 
-    return jsonify({"answer": answer})
-
-# --- Start the Flask app ---
+# --- Run app on 0.0.0.0 and Render port ---
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # fallback to 5000 locally
+    app.run(host="0.0.0.0", port=port)
