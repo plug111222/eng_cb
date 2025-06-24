@@ -6,7 +6,7 @@ from openai import OpenAI
 app = Flask(__name__)
 
 # Get the API key securely from environment variables
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("CHAT_KEY"))
 
 # --- Predefined knowledge base for the chatbot ---
 knowledge = [
