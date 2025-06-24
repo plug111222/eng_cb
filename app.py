@@ -3,7 +3,7 @@ from openai import OpenAI
 
 # --- Flask app setup ---
 app = Flask(__name__)
-client = OpenAI(api_key="OPENAI_API_KEY"
+client = OpenAI(api_key=("OPENAI_API_KEY"))
 # --- Knowledge base ---
 knowledge = [
     "Campus 'Match High School' has an average engagement score of approximately 3.66.",
