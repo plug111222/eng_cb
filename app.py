@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify, render_template_string
 from openai import OpenAI
+import os
 
 # --- Flask app setup ---
 app = Flask(__name__)
-client = OpenAI(api_key=("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # Read API key from environment variable
+
 # --- Knowledge base ---
 knowledge = [
     "Campus 'Match High School' has an average engagement score of approximately 3.66.",
@@ -94,4 +96,5 @@ def ask():
 
 # --- Run the app ---
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
